@@ -1,5 +1,9 @@
 # Mars Hackathon — *Where do the solar towns go?*
 
+![ML spoke siting: greedy placement of 80 spokes on a Gaussian-process surrogate of the storm Monte Carlo energy model (scenario 2, hub-supported)](outputs/scenario2_hub_supported/spoke_selection.gif)
+
+*ML spoke siting in action — greedy placement of 80 spokes on a Gaussian-process surrogate of the storm Monte Carlo energy model (scenario 2, hub-supported). Colour = parent hub, size = PV array sized to the site, dashed = pipeline. Scenario 1 GIF: `outputs/scenario1_self_sufficient/spoke_selection.gif`.*
+
 **Track: Life Support & Resource Systems — the closed loop**
 
 A hub-and-spoke plan for a Martian city, and a **Gaussian-process surrogate that decides
