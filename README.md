@@ -34,8 +34,8 @@ planning finding, not a demo:
 | array cap per spoke | 7 500 m² | 15 000 m² |
 | energy piped from hub | none | 200 kWh/sol (hub H2) |
 | **feasibility ends at** | **\|lat\| ≈ 55°** | **\|lat\| ≈ 84°** |
-| mean array sized | 3 430 m² | 3 360 m² |
-| mean pipeline run | 1 630 km | 1 605 km |
+| mean array sized | 3 400 m² | 3 400 m² |
+| mean pipeline run | 1 585 km | 1 606 km |
 
 **Solar-only spokes cannot survive a polar winter at 95 % reliability.** Feasibility dies
 right at the latitude of the ice hubs themselves — which is precisely *why* the hubs make
@@ -58,10 +58,10 @@ Evaluating one candidate site means running, end to end:
 3. the team's `household_sizing.py` sol-by-sol energy balance driven by that insolation
    minus heating, through **40 Monte Carlo dust-storm years**, inside a bisection on demand.
 
-~1 s per site. A 15 000-point candidate grid is hours; the planet at MOLA resolution is
-days. So we evaluate a **sparse design of sites** (default: 8 per hub = 64, plus 2
-active-learning rounds of 8; `--fast` uses 24), fit a GP over (lat, lon, elevation) with an
-ARD Matérn kernel, and optimise on the *posterior*.
+~1 s per site. The 0.5° candidate grid inside the hubs' reach is **272 000 points** — about
+75 hours of simulation; the planet at MOLA resolution is weeks. So we evaluate a **sparse design of 80 sites** (8 per hub = 64, plus 2 active-learning
+rounds of 8), fit a GP over (lat, lon, elevation) with an ARD Matérn kernel, and optimise on
+the *posterior* — which then scores all **272 000** candidate points for free.
 
 The uncertainty then does two jobs no point-estimate model can do:
 
@@ -91,8 +91,8 @@ uv venv .venv && uv pip install -p .venv/bin/python numpy scipy matplotlib sciki
 .venv/bin/python -m spoke_siting.run --fast # ~20 s smoke test
 ```
 
-Everything in `outputs/` was produced by that command (the committed artifacts are from a
-`--fast` run — 24 training sites — so they regenerate inside a demo slot). Individual models self-test:
+Everything in `outputs/` was produced by that command at default settings — 80 expensive
+evaluations, both scenarios, ~2 min. Individual models self-test:
 `python -m spoke_siting.site_energy`, `python spoke_siting/thermal_site.py`
 (→ `spoke_siting/thermal_validation.png`), `python household_sizing.py`.
 
@@ -119,7 +119,7 @@ poleward, bigger-array sites instead. Result: **80/80 spokes feasible in both sc
 | `outputs/scenario{1,2}_*/spoke_map.png` | chosen spokes coloured by parent hub, dashed pipelines |
 | `outputs/scenario{1,2}_*/hub_panels.png` | per-hub detail: posterior mean, uncertainty, chosen sites |
 | `outputs/scenario{1,2}_*/spokes.csv` | 80 rows: lat, lon, elev, pipeline km, capacity mean/std/LCB, sized array |
-| `outputs/gp_training_sites.csv` | every expensive evaluation the GP was actually trained on |
+| `outputs/gp_training_sites.csv` | the 80 expensive evaluations the GP was actually trained on |
 
 **Code**
 

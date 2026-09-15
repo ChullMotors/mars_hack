@@ -22,6 +22,16 @@ the feasibility constraint is applied to the 95 % lower confidence bound (risk-a
 and an active-learning loop spends extra expensive evaluations where uncertainty is high
 *near the 400 kWh/sol decision boundary*.
 
+## Watch the optimiser work
+![greedy spoke selection, scenario 2](../outputs/scenario2_hub_supported/spoke_selection.gif)
+
+*Round-robin greedy selection on the GP posterior (scenario 2): each frame adds one spoke,
+colour = parent hub, size = PV array sized to the site, dashed = pipeline.* Scenario 1's
+animation: `outputs/scenario1_self_sufficient/spoke_selection.gif`. Regenerate with
+`.venv/bin/python -m spoke_siting.animate outputs/<scenario_dir>`.
+
+![both scenarios](../outputs/scenario_overlay.png)
+
 ## Two locked scenarios (one shared GP)
 | | Scenario 1: self-sufficient | Scenario 2: hub-supported |
 |---|---|---|
