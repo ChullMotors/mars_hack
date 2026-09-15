@@ -23,14 +23,20 @@ and an active-learning loop spends extra expensive evaluations where uncertainty
 *near the 400 kWh/sol decision boundary*.
 
 ## Optimisation
-Greedy sequential selection per hub over a 0.25 deg candidate grid within 1000 km of the hub
-(one simple constant standing in for pipeline + comms-relay range). Selection is joint across hubs so overlapping disks do not stack spokes:
+Each spoke's PV array is **sized to its site**: the area at which the GP's 95 % lower
+confidence bound on capacity reaches 400 kWh/sol (capacity is linear in area). Sites needing
+more than 7500 m2 are infeasible. Greedy joint selection over all hubs (round-robin, one
+spoke per hub per pass) on a 0.5 deg candidate grid within 2500 km of each hub:
 
-    score = GP mean capacity  -  0.2 kWh/sol per km of pipeline  -  crowding repulsion
-    subject to  LCB95(capacity) >= 400 kWh/sol,  |elevation| <= 5 km,  spacing >= 50 km
+    score = - 200 * (extra panel area / 3000 m2)   # panel cost
+            - 0.05 * pipeline km                   # pipeline cost
+            - 300 * sum_j exp(-(d_j / 700 km)^2)   # coverage: planetary-scale dispersion
+    subject to  required area <= 7500 m2,  |elevation| <= 5 km,  spacing >= 150 km
 
-If a hub cannot host 10 feasible spokes, the best remaining sites are still reported, flagged
-infeasible, with the **PV area they would need** to reach 400 kWh/sol.
+The three constants are the user-defined knobs of the p-median framing. The coverage term
+spreads spokes over the reachable planet and buys a few poleward, bigger-array spokes
+instead of piling everything on the sunniest latitude. If a hub cannot host 10 feasible
+spokes, the least-bad sites are still reported and flagged.
 
 ## Run
     uv venv .venv && uv pip install -p .venv/bin/python numpy scipy matplotlib scikit-learn optuna
@@ -57,5 +63,5 @@ Outputs: `outputs/spokes.csv`, `outputs/spoke_map.png`, `outputs/hub_panels.png`
 - In this stand-in the capacity depends on latitude and elevation only, so the GP field is
   smooth; longitude is an input so a dust-climatology or thermal-inertia-aware model slots in
   with no code change.
-- Fixed spoke hardware: 3000 m2 PV, 1000 kWh battery, 4000 kWh H2 (mid-range of the team's
-  Optuna search space).
+- Spoke storage is fixed at 1000 kWh battery + 4000 kWh H2 (mid-range of the team's Optuna
+  search space); only the PV array is sized per site.

@@ -25,6 +25,8 @@ def sample_disk(hub, n, radius_km, rng):
         dlat = (r * np.cos(th)) / 59.15                      # km per degree on Mars
         dlon = (r * np.sin(th)) / (59.15 * np.cos(np.deg2rad(hub["lat"])))
         lat, lon = hub["lat"] + dlat, np.mod(hub["lon"] + dlon, 360)
+        if abs(lat) > 87:
+            continue
         e = float(elevation_m(lat, lon))
         if ELEV_MIN_M <= e <= ELEV_MAX_M:
             out.append((lat, lon, e))
@@ -52,8 +54,9 @@ def fit_gp(X, y):
 
 def candidate_grid(hub, radius_km, step_deg=0.5):
     dl = radius_km / 59.15 + step_deg
-    lats = np.arange(hub["lat"] - dl, hub["lat"] + dl, step_deg)
-    lons = np.arange(hub["lon"] - dl / np.cos(np.deg2rad(hub["lat"])), hub["lon"] + dl / np.cos(np.deg2rad(hub["lat"])), step_deg)
+    lats = np.arange(max(hub["lat"] - dl, -87.0), min(hub["lat"] + dl, 87.0), step_deg)
+    span = min(dl / np.cos(np.deg2rad(hub["lat"])), 180.0)
+    lons = np.arange(hub["lon"] - span, hub["lon"] + span, step_deg)
     LAT, LON = np.meshgrid(lats, lons, indexing="ij")
     lat, lon = LAT.ravel(), np.mod(LON.ravel(), 360)
     d = haversine_km(lat, lon, hub["lat"], hub["lon"])

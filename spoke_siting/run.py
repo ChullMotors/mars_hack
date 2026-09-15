@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from .geo import load_hubs
 from .mola import _load as load_mola
 from .gp_surrogate import sample_disk, evaluate_sites, fit_gp, features, candidate_grid
-from .optimize_spokes import select_spokes, DEMAND_KWH
+from .optimize_spokes import select_spokes, DEMAND_KWH, MAX_PV_AREA_M2
 from .site_energy import SPOKE_PV_AREA_M2
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -24,8 +24,8 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--spokes", type=int, default=10)
-    ap.add_argument("--range-km", type=float, default=1000.0, help="max pipeline / comms relay range from hub")
-    ap.add_argument("--init-per-hub", type=int, default=6)
+    ap.add_argument("--range-km", type=float, default=2500.0, help="max pipeline / comms relay range from hub")
+    ap.add_argument("--init-per-hub", type=int, default=8)
     ap.add_argument("--active-rounds", type=int, default=2)
     ap.add_argument("--active-per-round", type=int, default=8)
     ap.add_argument("--fast", action="store_true")
@@ -66,7 +66,7 @@ def main():
     # 3. optimise spoke placement per hub on the posterior
     post = {}
     mean_all, std_all = gp.predict(features(allc["lat"], allc["lon"], allc["elev"]), return_std=True)
-    rows = select_spokes(allc, mean_all, std_all, a.spokes, SPOKE_PV_AREA_M2, a.range_km)
+    rows = select_spokes(allc, mean_all, std_all, a.spokes, a.range_km)
     rows.sort(key=lambda r: r["hub_id"])
     for h in hubs:
         g = grids[h["id"]]
@@ -81,13 +81,13 @@ def main():
 
     # 4. report
     print(f"\n{len(X_sites)} expensive evaluations, {sum(len(g['lat']) for g in grids.values())} candidate sites scored by GP, {time.time()-t0:.0f}s total")
-    print(f"{'hub':>3} {'feasible':>8} {'mean cap':>9} {'mean dist':>9}  {'req. PV area for infeasible (m2)':>32}")
+    print(f"{'hub':>3} {'feasible':>8} {'lat range':>12} {'mean dist km':>12} {'PV area m2 (min-max)':>22}")
     for h in hubs:
         hr = [r for r in rows if r["hub_id"] == h["id"]]
         nf = sum(r["feasible"] for r in hr)
-        req = [r["required_pv_area_m2"] for r in hr if not r["feasible"]]
-        print(f"{h['id']:>3} {nf:>5}/{len(hr):<2} {np.mean([r['cap_mean'] for r in hr]):9.0f} {np.mean([r['dist_km'] for r in hr]):9.0f}  "
-              f"{('%.0f-%.0f' % (min(req), max(req))) if req else '-':>32}")
+        lats = [r["lat"] for r in hr]; areas = [r["pv_area_m2"] for r in hr]
+        print(f"{h['id']:>3} {nf:>5}/{len(hr):<2} {min(lats):5.0f}..{max(lats):4.0f} {np.mean([r['dist_km'] for r in hr]):12.0f} "
+              f"{min(areas):10.0f}-{max(areas):.0f}")
 
     plot(hubs, grids, post, rows, X_sites, y, a)
 
@@ -98,16 +98,16 @@ def plot(hubs, grids, post, rows, X_sites, y, a):
     fig, ax = plt.subplots(figsize=(14, 7))
     ax.imshow(mola / 1000, extent=[0, 360, -90, 90], cmap="gray", origin="upper", aspect="auto", alpha=0.85)
     sc = ax.scatter([r["lon"] for r in rows], [r["lat"] for r in rows], c=[r["cap_mean"] for r in rows],
-                    cmap="viridis", s=18, vmin=100, vmax=900, edgecolors="none", zorder=3)
+                    cmap="viridis", s=[12 + 40 * (r["pv_area_m2"] / MAX_PV_AREA_M2) for r in rows], vmin=100, vmax=900, edgecolors="none", zorder=3)
     ax.scatter([r["lon"] for r in rows if not r["feasible"]], [r["lat"] for r in rows if not r["feasible"]],
-               facecolors="none", edgecolors="red", s=40, linewidths=0.8, zorder=4, label="< 400 kWh/sol (needs larger array)")
+               facecolors="none", edgecolors="red", s=60, linewidths=0.8, zorder=4, label=f"infeasible (needs > {MAX_PV_AREA_M2:.0f} m2 array)")
     ax.scatter([h["lon"] for h in hubs], [h["lat"] for h in hubs], marker="*", s=220, c="orange", edgecolors="k", zorder=5, label="hub (ice)")
     for h in hubs:
         ax.annotate(f"H{h['id']}", (h["lon"], h["lat"]), xytext=(6, 6), textcoords="offset points", color="w", fontsize=9)
     plt.colorbar(sc, ax=ax, label="GP posterior mean capacity at 95% reliability (kWh/sol)", shrink=0.8)
-    ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-80, 80)
-    ax.set_title(f"Spoke siting: {a.spokes} spokes/hub within {a.range_km:.0f} km, GP surrogate of the storm Monte Carlo energy model "
-                 f"({len(y)} expensive evaluations)")
+    ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-90, 90)
+    ax.set_title(f"{a.spokes} spokes/hub within {a.range_km:.0f} km, arrays sized per site (marker size)\n"
+                 f"GP surrogate of the storm Monte Carlo energy model, {len(y)} expensive evaluations", fontsize=11)
     ax.legend(loc="lower left", fontsize=8)
     fig.tight_layout(); fig.savefig(os.path.join(ROOT, "outputs", "spoke_map.png"), dpi=130); plt.close(fig)
 

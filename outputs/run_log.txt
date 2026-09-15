@@ -4,24 +4,26 @@
   warnings.warn(
 /home/chris-hull/git-repos/mars_hack/.venv/lib/python3.14/site-packages/sklearn/gaussian_process/kernels.py:455: ConvergenceWarning: The optimal value found for dimension 1 of parameter k1__k2__length_scale is close to the specified upper bound 10000.0. Increasing the bound and calling fit again may find a better value.
   warnings.warn(
-Evaluating 48 initial sites with the team's Monte Carlo energy model ...
-  [expensive eval] 1/48  lat= 40.42 lon=  55.18 elev=   -388 m ->  573.2 kWh/sol
-  [expensive eval] 11/48  lat= 45.24 lon= 274.39 elev=   -889 m ->  392.8 kWh/sol
-  [expensive eval] 21/48  lat= 40.44 lon= 303.89 elev=  -1813 m ->  559.1 kWh/sol
-  [expensive eval] 31/48  lat= 42.07 lon= 226.27 elev=  -1693 m ->  500.7 kWh/sol
-  [expensive eval] 41/48  lat=-31.77 lon= 267.50 elev=   3616 m ->  645.5 kWh/sol
+Evaluating 64 initial sites with the team's Monte Carlo energy model ...
+  [expensive eval] 1/64  lat= 37.91 lon=  82.24 elev=  -3737 m ->  634.2 kWh/sol
+  [expensive eval] 11/64  lat= 48.27 lon= 278.51 elev=    592 m ->  296.2 kWh/sol
+  [expensive eval] 21/64  lat= 37.12 lon=  56.46 elev=  -2467 m ->  676.1 kWh/sol
+  [expensive eval] 31/64  lat= 36.41 lon= 257.50 elev=   2475 m ->  776.4 kWh/sol
+  [expensive eval] 41/64  lat= 44.65 lon= 209.20 elev=  -3838 m ->  401.8 kWh/sol
+  [expensive eval] 51/64  lat=-35.47 lon= 271.79 elev=   4527 m ->  542.4 kWh/sol
+  [expensive eval] 61/64  lat=-51.43 lon= 306.12 elev=   -227 m ->   78.1 kWh/sol
 Active round 1: evaluating 8 most-informative sites ...
 Active round 2: evaluating 8 most-informative sites ...
-GP kernel: 1.64**2 * Matern(length_scale=[28.9, 1e+04, 51], nu=2.5) + WhiteKernel(noise_level=6.93e-06)
+GP kernel: 0.988**2 * Matern(length_scale=[33, 1e+04, 61.9], nu=2.5) + WhiteKernel(noise_level=4.1e-06)
 
-64 expensive evaluations, 42988 candidate sites scored by GP, 55s total
-hub feasible  mean cap mean dist  req. PV area for infeasible (m2)
-  1    10/10      1076       937                                 -
-  2    10/10      1075       939                                 -
-  3    10/10       588       933                                 -
-  4    10/10       882       933                                 -
-  5    10/10       560       896                                 -
-  6    10/10       911       932                                 -
-  7    10/10       959       899                                 -
-  8    10/10       588       896                                 -
+80 expensive evaluations, 271689 candidate sites scored by GP, 76s total
+hub feasible    lat range mean dist km   PV area m2 (min-max)
+  1    10/10     0..  42         1908       3000-3000
+  2    10/10     5..  45         1682       3000-3000
+  3    10/10    12..  47         1683       3000-3931
+  4    10/10     6..  47         1698       3000-3639
+  5    10/10    16..  50         1834       3000-5061
+  6    10/10     5..  45         1943       3000-3041
+  7    10/10   -39..   1         1791       3000-3000
+  8    10/10   -43.. -14         1803       3000-4135
 wrote outputs/spokes.csv, outputs/spoke_map.png, outputs/hub_panels.png
