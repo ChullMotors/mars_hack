@@ -4,26 +4,47 @@
   warnings.warn(
 /home/chris-hull/git-repos/mars_hack/.venv/lib/python3.14/site-packages/sklearn/gaussian_process/kernels.py:455: ConvergenceWarning: The optimal value found for dimension 1 of parameter k1__k2__length_scale is close to the specified upper bound 10000.0. Increasing the bound and calling fit again may find a better value.
   warnings.warn(
+/home/chris-hull/git-repos/mars_hack/.venv/lib/python3.14/site-packages/sklearn/gaussian_process/kernels.py:455: ConvergenceWarning: The optimal value found for dimension 1 of parameter k1__k2__length_scale is close to the specified upper bound 10000.0. Increasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/home/chris-hull/git-repos/mars_hack/.venv/lib/python3.14/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-06. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
 Evaluating 64 initial sites with the team's Monte Carlo energy model ...
-  [expensive eval] 1/64  lat= 37.91 lon=  82.24 elev=  -3737 m ->  634.2 kWh/sol
-  [expensive eval] 11/64  lat= 48.27 lon= 278.51 elev=    592 m ->  296.2 kWh/sol
-  [expensive eval] 21/64  lat= 37.12 lon=  56.46 elev=  -2467 m ->  676.1 kWh/sol
-  [expensive eval] 31/64  lat= 36.41 lon= 257.50 elev=   2475 m ->  776.4 kWh/sol
-  [expensive eval] 41/64  lat= 44.65 lon= 209.20 elev=  -3838 m ->  401.8 kWh/sol
-  [expensive eval] 51/64  lat=-35.47 lon= 271.79 elev=   4527 m ->  542.4 kWh/sol
-  [expensive eval] 61/64  lat=-51.43 lon= 306.12 elev=   -227 m ->   78.1 kWh/sol
+  [expensive eval] 1/64  lat= 37.91 lon=  82.24 elev=  -3737 m ->  634.2 kWh/sol, heating  93.6
+  [expensive eval] 11/64  lat= 48.27 lon= 278.51 elev=    592 m ->  296.2 kWh/sol, heating 108.3
+  [expensive eval] 21/64  lat= 37.12 lon=  56.46 elev=  -2467 m ->  676.1 kWh/sol, heating  94.5
+  [expensive eval] 31/64  lat= 36.41 lon= 257.50 elev=   2475 m ->  776.4 kWh/sol, heating  96.5
+  [expensive eval] 41/64  lat= 44.65 lon= 209.20 elev=  -3838 m ->  401.8 kWh/sol, heating  99.3
+  [expensive eval] 51/64  lat=-35.47 lon= 271.79 elev=   4527 m ->  542.4 kWh/sol, heating 100.3
+  [expensive eval] 61/64  lat=-51.43 lon= 306.12 elev=   -227 m ->   78.1 kWh/sol, heating 116.6
 Active round 1: evaluating 8 most-informative sites ...
 Active round 2: evaluating 8 most-informative sites ...
 GP kernel: 0.988**2 * Matern(length_scale=[33, 1e+04, 61.9], nu=2.5) + WhiteKernel(noise_level=4.1e-06)
+heating GP kernel: 1.89**2 * Matern(length_scale=[97.7, 1e+04, 38.9], nu=2.5) + WhiteKernel(noise_level=1e-06)
 
-80 expensive evaluations, 271689 candidate sites scored by GP, 76s total
+80 expensive evaluations, 271689 candidate sites scored by GP, 76s
+
+=== Scenario 1: self-sufficient spokes, array cap 7500 m2, no hub import ===
 hub feasible    lat range mean dist km   PV area m2 (min-max)
   1    10/10     0..  42         1908       3000-3000
-  2    10/10     5..  45         1682       3000-3000
-  3    10/10    12..  47         1683       3000-3931
-  4    10/10     6..  47         1698       3000-3639
-  5    10/10    16..  50         1834       3000-5061
-  6    10/10     5..  45         1943       3000-3041
-  7    10/10   -39..   1         1791       3000-3000
-  8    10/10   -43.. -14         1803       3000-4135
-wrote outputs/spokes.csv, outputs/spoke_map.png, outputs/hub_panels.png
+  2    10/10     5..  50         1565       3000-4503
+  3    10/10    12..  51         1591       3000-5191
+  4    10/10     6..  48         1786       3000-3625
+  5    10/10    16..  51         1947       3000-4838
+  6    10/10     5..  45         1895       3000-3000
+  7    10/10   -42..   1         1660       3000-3325
+  8    10/10   -46.. -16         1942       3000-4709
+  poleward of own hub: 8/80 spokes;  highest |lat| 51 deg
+  wrote outputs/scenario1_self_sufficient/spokes.csv, spoke_map.png, hub_panels.png
+
+=== Scenario 2: hub-supported spokes, array cap 15000 m2, 200 kWh/sol piped from hub ===
+hub feasible    lat range mean dist km   PV area m2 (min-max)
+  1    10/10     0..  42         1966       3000-3000
+  2    10/10     4..  74         1665       3000-8127
+  3    10/10    12..  81         1652       3000-7686
+  4    10/10     6..  51         1536       3000-3007
+  5    10/10    12..  73         1669       3000-7977
+  6    10/10     5..  52         1763       3000-3242
+  7    10/10   -45..  -6         1531       3000-3000
+  8    10/10   -71.. -22         1690       3000-7499
+  poleward of own hub: 14/80 spokes;  highest |lat| 81 deg
+  wrote outputs/scenario2_hub_supported/spokes.csv, spoke_map.png, hub_panels.png

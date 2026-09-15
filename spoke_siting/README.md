@@ -22,16 +22,31 @@ the feasibility constraint is applied to the 95 % lower confidence bound (risk-a
 and an active-learning loop spends extra expensive evaluations where uncertainty is high
 *near the 400 kWh/sol decision boundary*.
 
+## Two locked scenarios (one shared GP)
+| | Scenario 1: self-sufficient | Scenario 2: hub-supported |
+|---|---|---|
+| array cap per spoke | 7500 m2 | 15000 m2 |
+| energy piped from hub | none | 200 kWh/sol (hub H2) |
+| outputs | `outputs/scenario1_self_sufficient/` | `outputs/scenario2_hub_supported/` |
+
+Scenario 1 shows that solar-only spokes cannot survive a polar winter at 95 % reliability:
+feasibility ends near 50 deg latitude, right at the hubs' own latitudes (which is why hubs
+make H2). Scenario 2 lets the hub pipe part of the demand back, and spokes reach past 70 deg.
+A constant per-sol import is exactly a demand reduction, so both scenarios reuse one GP.
+
 ## Optimisation
-Each spoke's PV array is **sized to its site**: the area at which the GP's 95 % lower
-confidence bound on capacity reaches 400 kWh/sol (capacity is linear in area). Sites needing
-more than 7500 m2 are infeasible. Greedy joint selection over all hubs (round-robin, one
+Each spoke's PV array is **sized to its site**. PV output scales with area but the heating
+load does not, so with a second GP predicting mean heating load `h`:
+
+    required_area = 3000 m2 * (400 - import + h) / (LCB95(capacity at 3000 m2) + h)
+
+Sites needing more than the scenario's cap are infeasible. Greedy joint selection over all hubs (round-robin, one
 spoke per hub per pass) on a 0.5 deg candidate grid within 2500 km of each hub:
 
     score = - 200 * (extra panel area / 3000 m2)   # panel cost
             - 0.05 * pipeline km                   # pipeline cost
             - 300 * sum_j exp(-(d_j / 700 km)^2)   # coverage: planetary-scale dispersion
-    subject to  required area <= 7500 m2,  |elevation| <= 5 km,  spacing >= 150 km
+    subject to  required area <= cap,  |elevation| <= 5 km,  spacing >= 150 km
 
 The three constants are the user-defined knobs of the p-median framing. The coverage term
 spreads spokes over the reachable planet and buys a few poleward, bigger-array spokes
@@ -41,8 +56,7 @@ spokes, the least-bad sites are still reported and flagged.
 ## Run
     uv venv .venv && uv pip install -p .venv/bin/python numpy scipy matplotlib scikit-learn optuna
     .venv/bin/python -m spoke_siting.run            # ~2 min;  --fast for a 20 s smoke test
-Outputs: `outputs/spokes.csv`, `outputs/spoke_map.png`, `outputs/hub_panels.png`,
-`outputs/gp_training_sites.csv`. Individual models have self-tests:
+Outputs per scenario: `spokes.csv`, `spoke_map.png`, `hub_panels.png`; shared `outputs/gp_training_sites.csv`. Individual models have self-tests:
 `python -m spoke_siting.site_energy`, `python spoke_siting/thermal_site.py`.
 
 ## Files

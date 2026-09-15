@@ -52,7 +52,7 @@ TAU_RANGE = (0.3, 1.0)        # background (non-storm) dust optical depth, drawn
 
 def capacity_kwh_per_sol(lat_deg, lon_deg, elev_m, pv_area_m2=SPOKE_PV_AREA_M2,
                          n_years=N_STORM_YEARS, seed=0, tau=None, tol=2.0,
-                         include_heating=None):
+                         include_heating=None, return_heating=False):
     """Max daily NON-heating demand (kWh/sol) the spoke meets at >= 95% reliability.
     Generation per sol = PV output under storms minus the habitat heating load from the
     1D regolith thermal model, so cold high-latitude sites are penalised twice (less sun,
@@ -65,10 +65,17 @@ def capacity_kwh_per_sol(lat_deg, lon_deg, elev_m, pv_area_m2=SPOKE_PV_AREA_M2,
     insol = np.stack([daily_insolation_profile(lat_deg, elev_m, tau=t) for t in taus])   # (years, sols)
     clear = pv_area_m2 * PV_EFF * insol                                  # kWh/sol clear-sky
     gens = clear * storm_profiles(n_years, seed)                         # common random numbers
+    heat_mean = 0.0
     if include_heating:
         # thermal model is ~0.4 s/call, so evaluate once at the mean tau (approximation)
         heat = heating_load_kwh_per_sol(lat_deg, elev_m, tau=float(np.mean(taus)))["profile"]
         gens = gens - heat[None, :]
+        heat_mean = float(heat.mean())
+    cap = _bisect_capacity(gens, clear, tol)
+    return (cap, heat_mean) if return_heating else cap
+
+
+def _bisect_capacity(gens, clear, tol):
     lo, hi = 0.0, float(clear.max())
     if reliability_at_demand(gens, hi) >= RELIABILITY_TARGET:
         return hi

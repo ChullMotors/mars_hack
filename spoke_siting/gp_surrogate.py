@@ -34,12 +34,13 @@ def sample_disk(hub, n, radius_km, rng):
 
 
 def evaluate_sites(sites, seed=0, verbose=True):
-    y = np.empty(len(sites))
+    """Returns (capacity, mean heating load) per site -- both come out of one expensive call."""
+    y, heat = np.empty(len(sites)), np.empty(len(sites))
     for i, (lat, lon, e) in enumerate(sites):
-        y[i] = capacity_kwh_per_sol(lat, lon, e, seed=seed)
+        y[i], heat[i] = capacity_kwh_per_sol(lat, lon, e, seed=seed, return_heating=True)
         if verbose and i % 10 == 0:
-            print(f"  [expensive eval] {i+1}/{len(sites)}  lat={lat:6.2f} lon={lon:7.2f} elev={e:7.0f} m -> {y[i]:6.1f} kWh/sol")
-    return y
+            print(f"  [expensive eval] {i+1}/{len(sites)}  lat={lat:6.2f} lon={lon:7.2f} elev={e:7.0f} m -> {y[i]:6.1f} kWh/sol, heating {heat[i]:5.1f}")
+    return y, heat
 
 
 def fit_gp(X, y):
