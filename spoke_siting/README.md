@@ -46,7 +46,8 @@ spoke per hub per pass) on a 0.5 deg candidate grid within 2500 km of each hub:
     score = - 200 * (extra panel area / 3000 m2)   # panel cost
             - 0.05 * pipeline km                   # pipeline cost
             - 300 * sum_j exp(-(d_j / 700 km)^2)   # coverage: planetary-scale dispersion
-    subject to  required area <= cap,  |elevation| <= 5 km,  spacing >= 150 km
+    subject to  required area <= cap,  |elevation| <= 5 km,  spacing >= 150 km,
+                >= 400 km from every hub
 
 The three constants are the user-defined knobs of the p-median framing. The coverage term
 spreads spokes over the reachable planet and buys a few poleward, bigger-array spokes
@@ -56,7 +57,8 @@ spokes, the least-bad sites are still reported and flagged.
 ## Run
     uv venv .venv && uv pip install -p .venv/bin/python numpy scipy matplotlib scikit-learn optuna
     .venv/bin/python -m spoke_siting.run            # ~2 min;  --fast for a 20 s smoke test
-Outputs per scenario: `spokes.csv`, `spoke_map.png`, `hub_panels.png`; shared `outputs/gp_training_sites.csv`. Individual models have self-tests:
+Outputs per scenario: `spokes.csv`, `spoke_map.png` (colour = parent hub, dashed = pipeline),
+`hub_panels.png`; shared `outputs/gp_training_sites.csv` and `outputs/scenario_overlay.png` (both layouts). Individual models have self-tests:
 `python -m spoke_siting.site_energy`, `python spoke_siting/thermal_site.py`.
 
 ## Files

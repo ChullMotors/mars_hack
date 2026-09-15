@@ -86,7 +86,7 @@ def main():
     print(f"\n{len(X_sites)} expensive evaluations, {len(allc['lat'])} candidate sites scored by GP, {time.time()-t0:.0f}s")
 
     for sc in SCENARIOS:
-        rows = select_spokes(allc, mean_all, std_all, heat_all, a.spokes, a.range_km, sc["max_area"], sc["hub_import"])
+        rows = select_spokes(allc, mean_all, std_all, heat_all, a.spokes, a.range_km, sc["max_area"], sc["hub_import"], hubs=hubs)
         rows.sort(key=lambda r: r["hub_id"])
         out = os.path.join(ROOT, "outputs", sc["name"]); os.makedirs(out, exist_ok=True)
         with open(os.path.join(out, "spokes.csv"), "w", newline="") as f:
@@ -102,25 +102,63 @@ def main():
         print(f"  poleward of own hub: {sum(abs(r['lat']) > abs(next(h['lat'] for h in hubs if h['id']==r['hub_id'])) for r in rows)}/{len(rows)} spokes;"
               f"  highest |lat| {max(abs(r['lat']) for r in rows):.0f} deg")
         plot(hubs, grids, post, rows, X_sites, y, a, sc, out)
+        sc["rows"] = rows
+    plot_overlay(hubs, SCENARIOS, a)
+
+
+HUB_COLORS = plt.cm.tab10.colors
+
+
+def draw_network(ax, hubs, rows, max_area, marker="o", alpha=1.0, label_prefix="", lines=True):
+    for k, h in enumerate(hubs):
+        c = HUB_COLORS[k % 10]
+        hr = [r for r in rows if r["hub_id"] == h["id"]]
+        if lines:
+            for r in hr:
+                lon = r["lon"] + (360 if r["lon"] - h["lon"] < -180 else -360 if r["lon"] - h["lon"] > 180 else 0)
+                for shift in (0, 360, -360):   # draw wrapped copies so meridian-crossing pipelines stay visible
+                    ax.plot([h["lon"] + shift, lon + shift], [h["lat"], r["lat"]], ls="--", lw=0.7, color=c, alpha=0.6 * alpha, zorder=2)
+        ax.scatter([r["lon"] for r in hr], [r["lat"] for r in hr], marker=marker, color=c, alpha=alpha,
+                   s=[20 + 60 * (r["pv_area_m2"] / max_area) for r in hr], edgecolors="k", linewidths=0.4, zorder=3,
+                   label="spoke (colour = parent hub, size = array area)" if (k == 0 and lines) else None)
+        bad = [r for r in hr if not r["feasible"]]
+        if bad:
+            ax.scatter([r["lon"] for r in bad], [r["lat"] for r in bad], facecolors="none", edgecolors="red", s=90, linewidths=1.0, zorder=4)
+    ax.scatter([h["lon"] for h in hubs], [h["lat"] for h in hubs], marker="*", s=260,
+               c=[HUB_COLORS[k % 10] for k in range(len(hubs))], edgecolors="k", zorder=5, label="hub (ice / H2)" if lines else None)
+    for k, h in enumerate(hubs):
+        ax.annotate(f"H{h['id']}", (h["lon"], h["lat"]), xytext=(6, 6), textcoords="offset points", color="w", fontsize=9)
+
+
+def plot_overlay(hubs, scenarios, a):
+    mola = load_mola()
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax.imshow(mola / 1000, extent=[0, 360, -90, 90], cmap="gray", origin="upper", aspect="auto", alpha=0.85)
+    s1, s2 = scenarios[0], scenarios[1]
+    draw_network(ax, hubs, s1["rows"], s1["max_area"], marker="o", alpha=0.9, lines=False)
+    draw_network(ax, hubs, s2["rows"], s2["max_area"], marker="s", alpha=0.55, lines=True)
+    ax.scatter([], [], marker="o", c="w", edgecolors="k", label="Scenario 1 (circles): self-sufficient")
+    ax.scatter([], [], marker="s", c="w", edgecolors="k", alpha=0.6, label="Scenario 2 (squares, dashed pipelines): hub-supported")
+    h, l = ax.get_legend_handles_labels()
+    keep = [i for i, t in enumerate(l) if t.startswith("Scenario") or t.startswith("hub")]
+    ax.legend([h[i] for i in keep], [l[i] for i in keep], loc="lower left", fontsize=8)
+    ax.text(0.01, 0.99, "spoke colour = parent hub, marker size = PV array area, red ring = infeasible", transform=ax.transAxes, va="top", fontsize=8, color="w")
+    ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-90, 90)
+    ax.set_title("Spoke layouts, both scenarios (colour = parent hub, size = array area)", fontsize=11)
+    fig.tight_layout(); fig.savefig(os.path.join(ROOT, "outputs", "scenario_overlay.png"), dpi=130); plt.close(fig)
+    print("  wrote outputs/scenario_overlay.png")
 
 
 def plot(hubs, grids, post, rows, X_sites, y, a, sc, out):
     mola = load_mola()
-    # --- global map ---
+    # --- global map: colour = parent hub, star = hub, circle = spoke, dashed = pipeline ---
     fig, ax = plt.subplots(figsize=(14, 7))
     ax.imshow(mola / 1000, extent=[0, 360, -90, 90], cmap="gray", origin="upper", aspect="auto", alpha=0.85)
-    pts = ax.scatter([r["lon"] for r in rows], [r["lat"] for r in rows], c=[r["cap_mean"] for r in rows],
-                    cmap="viridis", s=[12 + 40 * (r["pv_area_m2"] / sc["max_area"]) for r in rows], vmin=100, vmax=900, edgecolors="none", zorder=3)
-    ax.scatter([r["lon"] for r in rows if not r["feasible"]], [r["lat"] for r in rows if not r["feasible"]],
-               facecolors="none", edgecolors="red", s=60, linewidths=0.8, zorder=4, label=f"infeasible (needs > {sc['max_area']:.0f} m2 array)")
-    ax.scatter([h["lon"] for h in hubs], [h["lat"] for h in hubs], marker="*", s=220, c="orange", edgecolors="k", zorder=5, label="hub (ice)")
-    for h in hubs:
-        ax.annotate(f"H{h['id']}", (h["lon"], h["lat"]), xytext=(6, 6), textcoords="offset points", color="w", fontsize=9)
-    plt.colorbar(pts, ax=ax, label="GP posterior mean capacity at 95% reliability (kWh/sol)", shrink=0.8)
+    draw_network(ax, hubs, rows, sc["max_area"])
     ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-90, 90)
     ax.set_title(f"{sc['label']}\n{a.spokes} spokes/hub within {a.range_km:.0f} km, arrays sized per site (marker size); "
                  f"GP surrogate of the storm Monte Carlo energy model, {len(y)} expensive evaluations", fontsize=11)
-    ax.legend(loc="lower left", fontsize=8)
+    ax.legend(loc="lower left", fontsize=8, ncol=3)
     fig.tight_layout(); fig.savefig(os.path.join(out, "spoke_map.png"), dpi=130); plt.close(fig)
 
     # --- per-hub panels: posterior mean, uncertainty, chosen spokes ---

@@ -15,9 +15,10 @@ LAMBDA_DIST = 0.05        # cost per km of pipeline (2500 km costs 125)
 LAMBDA_CROWD = 300.0      # coverage: penalty for sitting on top of an existing spoke
 CROWD_SCALE_KM = 700.0    # planetary dispersion scale (~ half the spacing of 80 uniform sites)
 MIN_SPACING_KM = 150.0    # hard minimum spacing between any two spokes
+MIN_HUB_DIST_KM = 400.0   # no spoke closer than this to ANY hub (hub sites are ice/H2 plants)
 
 
-def select_spokes(cand, mean, std, heat, n_spokes, range_km, max_area=MAX_PV_AREA_M2, hub_import=0.0):
+def select_spokes(cand, mean, std, heat, n_spokes, range_km, max_area=MAX_PV_AREA_M2, hub_import=0.0, hubs=None):
     """Joint greedy selection across ALL hubs (candidates from every hub disk concatenated,
     dist_km is to the candidate's own hub). Round-robin over hubs, one spoke per hub per
     pass, crowding applied against every spoke chosen so far.
@@ -39,6 +40,9 @@ def select_spokes(cand, mean, std, heat, n_spokes, range_km, max_area=MAX_PV_ARE
                             BASE_PV_AREA_M2 * (DEMAND_KWH - hub_import + heat) / np.maximum(pv_at_base, 1.0), np.inf)
     req_area = np.maximum(req_area, BASE_PV_AREA_M2)
     elev_ok = (cand["elev"] >= ELEV_MIN_M) & (cand["elev"] <= ELEV_MAX_M)
+    if hubs:
+        d_hub = np.min([haversine_km(lat, lon, h["lat"], h["lon"]) for h in hubs], axis=0)
+        elev_ok &= d_hub >= MIN_HUB_DIST_KM
     feasible = (req_area <= max_area) & elev_ok
     base = -LAMBDA_AREA * (req_area - BASE_PV_AREA_M2) / BASE_PV_AREA_M2 - LAMBDA_DIST * dist
     chosen, avail = [], elev_ok.copy()
