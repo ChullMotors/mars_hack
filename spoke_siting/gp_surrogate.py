@@ -50,7 +50,7 @@ def fit_gp(X, y):
     return gp
 
 
-def candidate_grid(hub, radius_km, step_deg=0.25):
+def candidate_grid(hub, radius_km, step_deg=0.5):
     dl = radius_km / 59.15 + step_deg
     lats = np.arange(hub["lat"] - dl, hub["lat"] + dl, step_deg)
     lons = np.arange(hub["lon"] - dl / np.cos(np.deg2rad(hub["lat"])), hub["lon"] + dl / np.cos(np.deg2rad(hub["lat"])), step_deg)

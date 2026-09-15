@@ -24,7 +24,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--spokes", type=int, default=10)
-    ap.add_argument("--range-km", type=float, default=300.0, help="max pipeline / comms relay range from hub")
+    ap.add_argument("--range-km", type=float, default=1000.0, help="max pipeline / comms relay range from hub")
     ap.add_argument("--init-per-hub", type=int, default=6)
     ap.add_argument("--active-rounds", type=int, default=2)
     ap.add_argument("--active-per-round", type=int, default=8)
@@ -56,7 +56,7 @@ def main():
         for _ in range(a.active_per_round):
             j = int(np.argmax(acq)); idx.append(j)
             from .geo import haversine_km
-            acq *= 1 - np.exp(-(haversine_km(allc["lat"], allc["lon"], allc["lat"][j], allc["lon"][j]) / 80.0) ** 2)
+            acq *= 1 - np.exp(-(haversine_km(allc["lat"], allc["lon"], allc["lat"][j], allc["lon"][j]) / (0.15 * a.range_km)) ** 2)
         new = np.column_stack([allc["lat"][idx], allc["lon"][idx], allc["elev"][idx]])
         print(f"Active round {r+1}: evaluating {len(new)} most-informative sites ...")
         X_sites = np.vstack([X_sites, new]); y = np.concatenate([y, evaluate_sites(new, verbose=False)])
@@ -64,12 +64,13 @@ def main():
     print("GP kernel:", gp.kernel_)
 
     # 3. optimise spoke placement per hub on the posterior
-    rows, post = [], {}
+    post = {}
+    mean_all, std_all = gp.predict(features(allc["lat"], allc["lon"], allc["elev"]), return_std=True)
+    rows = select_spokes(allc, mean_all, std_all, a.spokes, SPOKE_PV_AREA_M2, a.range_km)
+    rows.sort(key=lambda r: r["hub_id"])
     for h in hubs:
         g = grids[h["id"]]
-        mean, std = gp.predict(features(g["lat"], g["lon"], g["elev"]), return_std=True)
-        post[h["id"]] = (mean, std)
-        rows += select_spokes(g, mean, std, a.spokes, SPOKE_PV_AREA_M2)
+        post[h["id"]] = gp.predict(features(g["lat"], g["lon"], g["elev"]), return_std=True)
 
     os.makedirs(os.path.join(ROOT, "outputs"), exist_ok=True)
     with open(os.path.join(ROOT, "outputs", "spokes.csv"), "w", newline="") as f:
@@ -104,7 +105,7 @@ def plot(hubs, grids, post, rows, X_sites, y, a):
     for h in hubs:
         ax.annotate(f"H{h['id']}", (h["lon"], h["lat"]), xytext=(6, 6), textcoords="offset points", color="w", fontsize=9)
     plt.colorbar(sc, ax=ax, label="GP posterior mean capacity at 95% reliability (kWh/sol)", shrink=0.8)
-    ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-75, 75)
+    ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-80, 80)
     ax.set_title(f"Spoke siting: {a.spokes} spokes/hub within {a.range_km:.0f} km, GP surrogate of the storm Monte Carlo energy model "
                  f"({len(y)} expensive evaluations)")
     ax.legend(loc="lower left", fontsize=8)

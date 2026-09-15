@@ -5,23 +5,23 @@
 /home/chris-hull/git-repos/mars_hack/.venv/lib/python3.14/site-packages/sklearn/gaussian_process/kernels.py:455: ConvergenceWarning: The optimal value found for dimension 1 of parameter k1__k2__length_scale is close to the specified upper bound 10000.0. Increasing the bound and calling fit again may find a better value.
   warnings.warn(
 Evaluating 48 initial sites with the team's Monte Carlo energy model ...
-  [expensive eval] 1/48  lat= 41.59 lon=  42.55 elev=   -767 m ->  571.1 kWh/sol
-  [expensive eval] 11/48  lat= 43.83 lon= 272.46 elev=    208 m ->  488.3 kWh/sol
-  [expensive eval] 21/48  lat= 45.61 lon= 292.63 elev=  -1198 m ->  403.3 kWh/sol
-  [expensive eval] 31/48  lat= 47.56 lon= 234.30 elev=  -1619 m ->  329.1 kWh/sol
-  [expensive eval] 41/48  lat=-33.69 lon= 277.68 elev=   3667 m ->  671.3 kWh/sol
+  [expensive eval] 1/48  lat= 40.42 lon=  55.18 elev=   -388 m ->  573.2 kWh/sol
+  [expensive eval] 11/48  lat= 45.24 lon= 274.39 elev=   -889 m ->  392.8 kWh/sol
+  [expensive eval] 21/48  lat= 40.44 lon= 303.89 elev=  -1813 m ->  559.1 kWh/sol
+  [expensive eval] 31/48  lat= 42.07 lon= 226.27 elev=  -1693 m ->  500.7 kWh/sol
+  [expensive eval] 41/48  lat=-31.77 lon= 267.50 elev=   3616 m ->  645.5 kWh/sol
 Active round 1: evaluating 8 most-informative sites ...
 Active round 2: evaluating 8 most-informative sites ...
-GP kernel: 3.83**2 * Matern(length_scale=[56, 1e+04, 56.2], nu=2.5) + WhiteKernel(noise_level=1.88e-05)
+GP kernel: 1.64**2 * Matern(length_scale=[28.9, 1e+04, 51], nu=2.5) + WhiteKernel(noise_level=6.93e-06)
 
-64 expensive evaluations, 15204 candidate sites scored by GP, 51s total
+64 expensive evaluations, 42988 candidate sites scored by GP, 55s total
 hub feasible  mean cap mean dist  req. PV area for infeasible (m2)
-  1    10/10       712       265                                 -
-  2    10/10       692       260                                 -
-  3     0/10       207       230                         4698-8462
-  4    10/10       512       266                                 -
-  5     0/10       214       236                         4552-8617
-  6    10/10       519       262                                 -
-  7    10/10       775       237                                 -
-  8     0/10       294       239                         3476-5383
+  1    10/10      1076       937                                 -
+  2    10/10      1075       939                                 -
+  3    10/10       588       933                                 -
+  4    10/10       882       933                                 -
+  5    10/10       560       896                                 -
+  6    10/10       911       932                                 -
+  7    10/10       959       899                                 -
+  8    10/10       588       896                                 -
 wrote outputs/spokes.csv, outputs/spoke_map.png, outputs/hub_panels.png

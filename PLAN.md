@@ -46,5 +46,5 @@ net capacity = capacity - heating_load becomes the GP target / constraint.
 Active-survey loop: pick next evaluation site by UCB on the siting objective.
 
 ## Defaults
-10 spokes/hub · 300 km range · PV area fixed per spoke (from teammate's Optuna design,
+10 spokes/hub · 1000 km range · PV area fixed per spoke (from teammate's Optuna design,
 ~ pv_kwh_day/0.132 m²) · tau=0.5 · λ_d, λ_c set so 100 km ≈ 20 kWh/sol.

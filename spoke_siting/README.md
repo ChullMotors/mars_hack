@@ -8,7 +8,7 @@ the shortest pipelines to its hub and an even spread.
 ## Why a Gaussian process
 Whether a site can hit 400 kWh/sol is *expensive* to evaluate. Per site we run:
 
-1. a physics solar model (orbit -> zenith angle -> Beer-Lambert, tau = 0.5, pressure-scaled by
+1. a physics solar model (orbit -> zenith angle -> Beer-Lambert, background dust tau ~ U(0.3, 1.0) drawn per storm-year, pressure-scaled by
    MOLA elevation) giving a 668-sol insolation profile,
 2. a 1D transient regolith + habitat thermal model (finite difference, one Mars year of
    diurnal forcing, CO2 frost clamp) giving the sol-by-sol **heating load**,
@@ -23,11 +23,11 @@ and an active-learning loop spends extra expensive evaluations where uncertainty
 *near the 400 kWh/sol decision boundary*.
 
 ## Optimisation
-Greedy sequential selection per hub over a 0.25 deg candidate grid within 300 km of the hub
-(one simple constant standing in for pipeline + comms-relay range):
+Greedy sequential selection per hub over a 0.25 deg candidate grid within 1000 km of the hub
+(one simple constant standing in for pipeline + comms-relay range). Selection is joint across hubs so overlapping disks do not stack spokes:
 
     score = GP mean capacity  -  0.2 kWh/sol per km of pipeline  -  crowding repulsion
-    subject to  LCB95(capacity) >= 400 kWh/sol,  |elevation| <= 5 km,  spacing >= 30 km
+    subject to  LCB95(capacity) >= 400 kWh/sol,  |elevation| <= 5 km,  spacing >= 50 km
 
 If a hub cannot host 10 feasible spokes, the best remaining sites are still reported, flagged
 infeasible, with the **PV area they would need** to reach 400 kWh/sol.
@@ -51,7 +51,7 @@ Outputs: `outputs/spokes.csv`, `outputs/spoke_map.png`, `outputs/hub_panels.png`
 | `run.py` | end-to-end driver, active learning, figures |
 
 ## Honest caveats
-- Solar and thermal models are ours, with tau fixed at 0.5 and labelled assumptions
+- Solar and thermal models are ours, with labelled assumptions
   (diffuse fraction, habitat U-value, 20 W/m2 downwelling IR). Dust storms enter only via the
   team's storm Monte Carlo, not the thermal model.
 - In this stand-in the capacity depends on latitude and elevation only, so the GP field is

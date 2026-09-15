@@ -44,22 +44,30 @@ def reliability_at_demand(generation_profiles, demand_kwh):
 
 
 INCLUDE_HEATING = True        # subtract habitat heating load (thermal_site.py) sol by sol
+TAU_RANGE = (0.3, 1.0)        # background (non-storm) dust optical depth, drawn once per
+                              # Monte Carlo year. CITED range: Viking/MER clear-season tau
+                              # ~0.3-1.0. Storms are NOT in tau -- household_sizing's
+                              # storm multipliers handle them (no double counting).
 
 
 def capacity_kwh_per_sol(lat_deg, lon_deg, elev_m, pv_area_m2=SPOKE_PV_AREA_M2,
-                         n_years=N_STORM_YEARS, seed=0, tau=0.5, tol=2.0,
+                         n_years=N_STORM_YEARS, seed=0, tau=None, tol=2.0,
                          include_heating=None):
     """Max daily NON-heating demand (kWh/sol) the spoke meets at >= 95% reliability.
     Generation per sol = PV output under storms minus the habitat heating load from the
     1D regolith thermal model, so cold high-latitude sites are penalised twice (less sun,
-    more heating)."""
+    more heating). Background dust tau is uncertain: drawn ~U(TAU_RANGE) per Monte Carlo
+    year (pass a float `tau` to fix it)."""
     if include_heating is None:
         include_heating = INCLUDE_HEATING
-    insol = daily_insolation_profile(lat_deg, elev_m, tau=tau)          # kWh/m2/sol
+    rng = np.random.default_rng(seed + 12345)
+    taus = np.full(n_years, float(tau)) if tau is not None else rng.uniform(*TAU_RANGE, size=n_years)
+    insol = np.stack([daily_insolation_profile(lat_deg, elev_m, tau=t) for t in taus])   # (years, sols)
     clear = pv_area_m2 * PV_EFF * insol                                  # kWh/sol clear-sky
-    gens = clear[None, :] * storm_profiles(n_years, seed)                # common random numbers
+    gens = clear * storm_profiles(n_years, seed)                         # common random numbers
     if include_heating:
-        heat = heating_load_kwh_per_sol(lat_deg, elev_m, tau=tau)["profile"]
+        # thermal model is ~0.4 s/call, so evaluate once at the mean tau (approximation)
+        heat = heating_load_kwh_per_sol(lat_deg, elev_m, tau=float(np.mean(taus)))["profile"]
         gens = gens - heat[None, :]
     lo, hi = 0.0, float(clear.max())
     if reliability_at_demand(gens, hi) >= RELIABILITY_TARGET:
