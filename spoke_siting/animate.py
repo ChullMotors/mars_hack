@@ -42,8 +42,8 @@ def main(scen_dir):
     for h in hubs:
         ax.annotate(f"H{h['id']}", (h["lon"], h["lat"]), xytext=(5, 5), textcoords="offset points", color="w", fontsize=8)
     ax.set_xlim(0, 360); ax.set_ylim(-90, 90); ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude")
-    title = ax.set_title("")
-    fig.tight_layout()
+    title = ax.set_title("", fontsize=8)
+    fig.tight_layout(); fig.subplots_adjust(top=0.92)
 
     def frame(i):
         if i >= len(order):
