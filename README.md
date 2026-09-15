@@ -11,7 +11,7 @@ where the spokes go**.
   carry water/O2 out from the hub and surplus energy/CH4 back.
 - **The one decision ML drives:** given that a spoke must deliver **>= 400 kWh/sol at 95 %
   reliability** through Martian winter and dust storms, *which 80 points on the planet do
-  you build on, and how big does each array need to be?*
+  you build on, and how big does each array need to be?* [¹]
 
 ![Both scenarios](outputs/scenario_overlay.png)
 
@@ -182,6 +182,6 @@ The interface was agreed before either side was written, which is why the expens
 model dropped into the GP loop unchanged.
 
 ---
-
+[¹] The 400 kWh/sol, 95%-reliability bar comes from Rucker, M. A., "Surface Power for Mars," Mars Study Capability Team, NASA Johnson Space Center — NASA DRA 5.0 (NTRS Document ID 20160014032, JSC-CN-37990, Dec. 2016): a 4-person crew's combined surface habitat (8.0 kW) + Mars Ascent Vehicle (6.655 kW) keep-alive load, ≈14.9 kW → 357.6 kWh/day, rounded up to 400 kWh/sol to also cover this design's on-site electrolysis/Sabatier load. Full derivation and citation in design_calculations.md (§1, §11).
 *Deeper method notes: [`spoke_siting/README.md`](spoke_siting/README.md). Scope and
 timeline: [`PLAN.md`](PLAN.md).*
