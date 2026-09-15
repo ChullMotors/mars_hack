@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from .geo import load_hubs
+from .geo import load_hubs, haversine_km
 from .mola import _load as load_mola
 from .gp_surrogate import sample_disk, evaluate_sites, fit_gp, features, candidate_grid
 from .optimize_spokes import select_spokes, DEMAND_KWH, MAX_PV_AREA_M2
@@ -53,6 +53,11 @@ def main():
     # candidate grids (cheap) for every hub
     grids = {h["id"]: candidate_grid(h, a.range_km) for h in hubs}
     allc = {k: np.concatenate([g[k] for g in grids.values()]) for k in ("lat", "lon", "elev", "dist_km", "hub_id")}
+    # every candidate belongs to its NEAREST hub (disks overlap, so re-assign after the union)
+    d_all = np.stack([haversine_km(allc["lat"], allc["lon"], h["lat"], h["lon"]) for h in hubs])   # (hubs, cands)
+    nearest = np.argmin(d_all, axis=0)
+    allc["hub_id"] = np.array([hubs[i]["id"] for i in nearest])
+    allc["dist_km"] = d_all[nearest, np.arange(len(nearest))]
 
     # 2. active learning: spend more expensive evals where the surrogate is least sure
     for r in range(a.active_rounds):
@@ -62,7 +67,6 @@ def main():
         idx = []
         for _ in range(a.active_per_round):
             j = int(np.argmax(acq)); idx.append(j)
-            from .geo import haversine_km
             acq *= 1 - np.exp(-(haversine_km(allc["lat"], allc["lon"], allc["lat"][j], allc["lon"][j]) / (0.15 * a.range_km)) ** 2)
         new = np.column_stack([allc["lat"][idx], allc["lon"][idx], allc["elev"][idx]])
         print(f"Active round {r+1}: evaluating {len(new)} most-informative sites ...")
@@ -120,7 +124,7 @@ def draw_network(ax, hubs, rows, max_area, marker="o", alpha=1.0, label_prefix="
                     ax.plot([h["lon"] + shift, lon + shift], [h["lat"], r["lat"]], ls="--", lw=0.7, color=c, alpha=0.6 * alpha, zorder=2)
         ax.scatter([r["lon"] for r in hr], [r["lat"] for r in hr], marker=marker, color=c, alpha=alpha,
                    s=[20 + 60 * (r["pv_area_m2"] / max_area) for r in hr], edgecolors="k", linewidths=0.4, zorder=3,
-                   label="spoke (colour = parent hub, size = array area)" if (k == 0 and lines) else None)
+                   label=f"H{h['id']} ({abs(h['lat']):.0f}°{'N' if h['lat'] > 0 else 'S'}, {h['lon']:.0f}°E) + its spokes" if lines else None)
         bad = [r for r in hr if not r["feasible"]]
         if bad:
             ax.scatter([r["lon"] for r in bad], [r["lat"] for r in bad], facecolors="none", edgecolors="red", s=90, linewidths=1.0, zorder=4)
@@ -139,9 +143,7 @@ def plot_overlay(hubs, scenarios, a):
     draw_network(ax, hubs, s2["rows"], s2["max_area"], marker="s", alpha=0.55, lines=True)
     ax.scatter([], [], marker="o", c="w", edgecolors="k", label="Scenario 1 (circles): self-sufficient")
     ax.scatter([], [], marker="s", c="w", edgecolors="k", alpha=0.6, label="Scenario 2 (squares, dashed pipelines): hub-supported")
-    h, l = ax.get_legend_handles_labels()
-    keep = [i for i, t in enumerate(l) if t.startswith("Scenario") or t.startswith("hub")]
-    ax.legend([h[i] for i in keep], [l[i] for i in keep], loc="lower left", fontsize=8)
+    ax.legend(loc="lower left", fontsize=7, ncol=3, title="star = hub, marker size = PV area, dashed = scenario-2 pipeline", title_fontsize=7)
     ax.text(0.01, 0.99, "spoke colour = parent hub, marker size = PV array area, red ring = infeasible", transform=ax.transAxes, va="top", fontsize=8, color="w")
     ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-90, 90)
     ax.set_title("Spoke layouts, both scenarios (colour = parent hub, size = array area)", fontsize=11)
@@ -158,7 +160,7 @@ def plot(hubs, grids, post, rows, X_sites, y, a, sc, out):
     ax.set_xlabel("longitude (°E)"); ax.set_ylabel("latitude"); ax.set_xlim(0, 360); ax.set_ylim(-90, 90)
     ax.set_title(f"{sc['label']}\n{a.spokes} spokes/hub within {a.range_km:.0f} km, arrays sized per site (marker size); "
                  f"GP surrogate of the storm Monte Carlo energy model, {len(y)} expensive evaluations", fontsize=11)
-    ax.legend(loc="lower left", fontsize=8, ncol=3)
+    ax.legend(loc="lower left", fontsize=7, ncol=3, title="star = hub, circle = spoke (size = PV area), dashed = pipeline", title_fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(out, "spoke_map.png"), dpi=130); plt.close(fig)
 
     # --- per-hub panels: posterior mean, uncertainty, chosen spokes ---
