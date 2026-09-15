@@ -23,7 +23,9 @@ where the spokes go**.
 
 ## 1. Impact & Purpose — the problem this actually solves
 
-<img width="332" height="199" alt="image" src="https://github.com/user-attachments/assets/09bf9128-8694-40ac-9ab4-0d8663722ee5" />
+<p align="center">
+  <img src="household_resource_loop.svg" alt="Household Resource Loop" width="900">
+</p>
 
 Every spoke is one instance of this same replicable unit. Solar power splits three ways the instant it's generated — straight to the house, into the battery, or into the electrolyser — while water arrives from one shared, centralized facility (the hub) and leaves the household as oxygen, reserve hydrogen, and exportable methane. Both the Sabatier reactor and the fuel cell give off water as steam rather than liquid; one shared water-recovery condenser captures both streams and feeds them back into the electrolyser. Centralizing the one hard part — ice excavation, done once at the hub — while keeping everything past that hookup inside each household's own equipment is what makes the unit replicable: add a family, add a unit, without adding another excavation facility. household_sizing.py formalizes and sizes exactly this loop (§2, §3 below), and the 400 kWh/sol bar it produces is what spoke_siting/ then tests against every candidate site on the planet.
 A first settlement does not get to guess where its power comes from. Ice fixes where the
